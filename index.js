@@ -1,12 +1,20 @@
-'format cjs';
+'format cjs'
 
-var engine = require('./engine');
-var conventionalCommitTypes = require('conventional-commit-types');
-var configLoader = require('commitizen').configLoader;
+const engine = require('./engine')
+const conventionalCommitTypes = require('conventional-commit-types')
+const { configLoader } = require('commitizen')
 
-var config = configLoader.load() || {};
-var options = {
-  types: config.types || conventionalCommitTypes.types,
+const types = {
+  ...conventionalCommitTypes.types,
+  config: {
+    description: 'A code change that affects project configuration',
+    title: 'Config',
+  },
+}
+
+const config = configLoader.load() || {}
+const options = {
+  types: config.types || types,
   defaultType: process.env.CZ_TYPE || config.defaultType,
   defaultScope: process.env.CZ_SCOPE || config.defaultScope,
   defaultSubject: process.env.CZ_SUBJECT || config.defaultSubject,
@@ -16,33 +24,39 @@ var options = {
     process.env.DISABLE_SCOPE_LOWERCASE || config.disableScopeLowerCase,
   maxHeaderWidth:
     (process.env.CZ_MAX_HEADER_WIDTH &&
-      parseInt(process.env.CZ_MAX_HEADER_WIDTH)) ||
+      parseInt(process.env.CZ_MAX_HEADER_WIDTH, 10)) ||
     config.maxHeaderWidth ||
     100,
   maxLineWidth:
-    (process.env.CZ_MAX_LINE_WIDTH &&
-      parseInt(process.env.CZ_MAX_LINE_WIDTH)) ||
+    (process.env.CZ_MAX_LINE_WIDTH && parseInt(process.env.CZ_MAX_LINE_WIDTH, 10)) ||
     config.maxLineWidth ||
-    100
-};
+    100,
+}
 
-(function(options) {
+;(function (options) {
   try {
-    var commitlintLoad = require('@commitlint/load');
-    commitlintLoad().then(function(clConfig) {
-      if (clConfig.rules) {
-        var maxHeaderLengthRule = clConfig.rules['header-max-length'];
-        if (
-          typeof maxHeaderLengthRule === 'object' &&
-          maxHeaderLengthRule.length >= 3 &&
-          !process.env.CZ_MAX_HEADER_WIDTH &&
-          !config.maxHeaderWidth
-        ) {
-          options.maxHeaderWidth = maxHeaderLengthRule[2];
-        }
-      }
-    });
-  } catch (err) {}
-})(options);
+    // eslint-disable-next-line global-require
+    const commitlintLoad = require('@commitlint/load')
 
-module.exports = engine(options);
+    // eslint-disable-next-line complexity
+    commitlintLoad().then(function (clConfig) {
+      if (!clConfig.rules) {
+        return
+      }
+
+      const maxHeaderLengthRule = clConfig.rules['header-max-length']
+      if (
+        typeof maxHeaderLengthRule === 'object' &&
+        maxHeaderLengthRule.length >= 3 &&
+        !process.env.CZ_MAX_HEADER_WIDTH &&
+        !config.maxHeaderWidth
+      ) {
+        // eslint-disable-next-line prefer-destructuring, no-param-reassign
+        options.maxHeaderWidth = maxHeaderLengthRule[2]
+      }
+    })
+    // eslint-disable-next-line no-empty
+  } catch (err) {}
+})(options)
+
+module.exports = engine(options)
