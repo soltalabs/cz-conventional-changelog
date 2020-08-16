@@ -1,5 +1,1 @@
-{
-  "printWidth": 80,
-  "endOfLine": "lf",
-  "singleQuote": true
-}
+"@soltalabs/prettier-config"
